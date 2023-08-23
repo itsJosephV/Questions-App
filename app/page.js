@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import Link from "next/link";
 import React from "react";
 
 export const dynamic = "force-dynamic"; // WHY?
@@ -12,16 +14,18 @@ const supabase = createClient(
   }
 );
 
-
 export default async function Home() {
-  const { data: questions } = await supabase.from("questions").select();
+  const { data: questions } = await supabase.from("questions").select('*');
 
   async function handleSubmit(formData) {
     "use server";
     const question = formData.get("question");
 
-    await supabase.from("questions").insert({ text: question });
+    const id = Date.now().toString()
+
+    await supabase.from("questions").insert({ text: question, id });
     revalidatePath("/");
+    redirect(`/${id}`)
   }
 
   console.log(questions);
@@ -47,10 +51,12 @@ export default async function Home() {
       <hr className="opacity-50" />
       <article className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(230px,1fr))]">
         {questions.map((quest) => (
-          <section className=" p-5 bg-neutral-800 rounded-lg" key={quest.id}>
-            <p className="mb-5 text-green-400">QuestionsApp</p>
-            <p>{quest.text}</p>
-          </section>
+          <Link href={`/${quest.id}`} key={quest.id}>
+            <section className="p-5 bg-neutral-800 rounded-lg">
+              <p className="mb-5 text-green-400">QuestionsApp</p>
+              <p>{quest.text}</p>
+            </section>
+          </Link>
         ))}
       </article>
     </div>
